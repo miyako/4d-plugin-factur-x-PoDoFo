@@ -131,6 +131,12 @@ jobs:
             core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
             core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
 
+      # vcpkg builds gperf (a libxml2 dependency of PoDoFo) from source on
+      # macOS, and gperf's port shells out to autoreconf. None of autoconf,
+      # automake, libtool or autoconf-archive are on the macOS runner image.
+      - name: install vcpkg build prerequisites (macOS)
+        run: brew install --quiet autoconf automake libtool autoconf-archive
+
       # PoDoFo and its dependency graph cannot be configured for more than one
       # architecture at a time, so each slice gets its own vcpkg triplet and the
       # two Mach-O files are merged afterwards. Static linkage means the
