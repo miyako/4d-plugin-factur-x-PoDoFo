@@ -1,0 +1,9 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "facturx",
+  "version-string": "1.0.0",
+  "description": "4D plugin that embeds a Factur-X / ZUGFeRD invoice into a PDF/A-3 document",
+  "dependencies": [
+    "podofo"
+  ]
+}
