@@ -26,6 +26,11 @@
 
 #if defined(_WIN32)
 #include <windows.h>
+/* <wingdi.h> defines GetObject as GetObjectW under UNICODE, which mangles the
+   unrelated PoDoFo methods of the same name. The 4D SDK header pulls in
+   <windows.h> before this point, so the macro has to be dropped here rather
+   than suppressed with WIN32_LEAN_AND_MEAN. */
+#undef GetObject
 #else
 #include <unistd.h>
 #endif

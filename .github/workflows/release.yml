@@ -63,7 +63,8 @@ jobs:
           cd facturx
           cmake -S . -B cmake-build -A x64 `
             -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" `
-            -DVCPKG_TARGET_TRIPLET=x64-windows-static
+            -DVCPKG_OVERLAY_TRIPLETS="$(Get-Location)/triplets" `
+            -DVCPKG_TARGET_TRIPLET=x64-windows-static-4d
           cmake --build cmake-build --config Release --parallel
 
       - name: upload windows binaries
