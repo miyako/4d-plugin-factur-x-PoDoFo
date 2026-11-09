@@ -281,8 +281,50 @@ plugin.
 | Workflow | Trigger | Purpose |
 |---|---|---|
 | `test.yml` | Push / PR / manual | Build and test on macOS + Windows, validate with veraPDF |
-| `bump-version.yml` | Manual | Bump `VERSION`, commit, push a `v*.*.*` tag |
-| `release.yml` | `v*.*.*` tag | Build both platforms, sign, notarize, publish a release |
+| `bump-version.yml` (Bump version) | Manual, patch/minor/major | Commit coordinated source version metadata to the selected branch only; no tags or automatic Build |
+| `release.yml` (Build) | Manual, no inputs (branch selector only) | Build the selected commit on both platforms, sign, notarize, then create a new tag and release |
+
+Run **Bump version** on the desired branch, then separately run **Build** on
+that branch. Build checks out the dispatch's immutable `github.sha` in every
+job, not a moving branch or a pre-existing tag. It accepts any selected branch;
+there is no main-only publication restriction.
+
+`VERSION` is authoritative and must be strict `X.Y.Z` without leading zeros.
+`facturx/Version.cmake` reads it into `FACTURX_VERSION`; both bundle version
+properties reference that variable, and `Info.plist.in` retains its CMake
+placeholders. Literal source versions, if introduced, must agree and are
+updated together by Bump version. The migration repairs the old `1.0` bundle
+metadata to resolve to the existing `VERSION`, without incrementing it.
+The vcpkg manifest's package version, dependency versions, and 4D format
+compatibility version are independent and are not bumped.
+
+Bump version pushes only the selected branch without force or followed tags.
+A concurrent branch advance rejects the push; rerun from the new branch tip.
+Build rejects existing remote tags or releases (including drafts), metadata
+drift, and remote/API errors before building, and rechecks immediately before
+publication. Builds are serialized across branches. Only after both platform
+builds, universal-binary and bundle-version checks, signing, accepted ZIP/DMG
+notarization and DMG stapling/validation succeed does it push `vX.Y.Z`
+non-forcibly at the exact selected SHA and create a **new** release with
+`facturx-X.Y.Z.zip` and `facturx-X.Y.Z.dmg`. No tag, release or asset is
+overwritten or deleted. A create-only API call publishes a non-draft,
+non-prerelease release, followed by `gh release upload` without `--clobber`.
+The original policy of no generated release notes is retained.
+`gh release create` with assets is avoided because it deletes its draft on
+upload failure.
+
+Publication is not atomic: a failure after the tag push can leave a tag,
+or a release with incomplete assets. Build deliberately refuses to overwrite
+that state on rerun. Inspect the failed run and reconcile it manually before
+choosing a new version. The independent Build and Test workflow remains
+push/PR/manual CI; it does not publish releases.
+
+Lifecycle regressions use only local fixtures and mocked publication services:
+
+```bash
+python3 -m unittest discover -s .github/scripts -p 'test_*.py'
+actionlint
+```
 
 ### Required secrets (`release.yml` only)
 
