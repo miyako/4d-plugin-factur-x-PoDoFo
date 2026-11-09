@@ -1,0 +1,10 @@
+file(READ "${CMAKE_CURRENT_LIST_DIR}/../VERSION" _FACTURX_VERSION_BYTES HEX)
+# CMake normalizes carriage returns in text reads; validate the raw bytes too.
+if(NOT _FACTURX_VERSION_BYTES MATCHES "^(3[0-9]|2e)+((0d)?0a)?$")
+    message(FATAL_ERROR "VERSION must contain only X.Y.Z and an optional LF or CRLF")
+endif()
+file(READ "${CMAKE_CURRENT_LIST_DIR}/../VERSION" FACTURX_VERSION)
+if(NOT FACTURX_VERSION MATCHES "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(\r?\n)?$")
+    message(FATAL_ERROR "VERSION must contain only X.Y.Z without leading zeros")
+endif()
+string(REGEX REPLACE "\r?\n$" "" FACTURX_VERSION "${FACTURX_VERSION}")
