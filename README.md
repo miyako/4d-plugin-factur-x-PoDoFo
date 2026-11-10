@@ -170,7 +170,7 @@ compare against a name instead of a number.
 | 303 | `facturx error output temp failed` | Temporary file could not be created |
 | 304 | `facturx error output rename failed` | Temporary file could not be renamed |
 | 305 | `facturx error output inplace no overwrite` | In-place edit without `overwrite` |
-| 401 | `facturx error backend` | PoDoFo reported an error |
+| 401 | `facturx error backend` | PoDoFo error or failed native object-property / attachment-element read (includes the 4D error code) |
 | 402 | `facturx error unexpected exception` | Unexpected C++ exception |
 | 403 | `facturx error unknown fatal` | Unknown fatal condition |
 
@@ -275,6 +275,42 @@ verapdf --flavour 3b facturx/facturx-test/conformance-out.pdf
 
 Ghostscript and veraPDF are build-time tools only; neither is linked into the
 plugin.
+
+### Native ownership regression (macOS)
+
+With the pinned SDK submodule, Xcode command-line tools, Python 3, pkg-config
+and PoDoFo available, run from the repository root:
+
+```bash
+python3 tests/native/run.py
+```
+
+This compiles the actual production translation unit and the **complete,
+unchanged** bundled SDK against an engine-boundary host shim, without building
+a plugin bundle or invoking release scripts. ASan/UBSan and explicit
+string/handle/reference balances cover failed getter outputs before ownership
+adoption, successful and mismatched getter cleanup, exact ASCII/BMP/supplementary
+UTF-16 lengths and terminators, allocated/null empty strings, synchronous setter
+copies, independent warning values, object/collection return handoffs, and SDK
+array transfer/replacement/shrink/rejection contracts. `--source-root PATH`
+runs the same harness against another extracted source tree and its pinned SDK.
+
+The ownership audit covers all first-party native sources and headers
+(`facturx-4dplugin.cpp` / `.h`), including internal helpers, plus CMake include /
+compile reachability, `manifest.json` and the actual `PluginMain` /
+`FourDPackex` exports (`facturx.def` on Windows). There is one command, selector 1,
+and no separate dormant native wrapper, picture, pointer or callback family.
+The SDK is the `4d/4D-Plugin-SDK` submodule at
+`cd97d1876d4258b56d2516e8ad2816f4ee93e0b5`; its `rev: v14` comment is not an
+upstream release identity. Successful property/element values are cleared after
+use; input parameters remain borrowed; synchronous setter inputs are released
+after the engine copies them; status and warning collection handoffs stay owning.
+
+The shim is not a real 4D host or Windows crash reproduction. LeakSanitizer is
+unavailable on macOS, so explicit allocation/reference balances supplement
+ASan/UBSan. SDK internals and third-party libraries are not patched or certified:
+in particular, the SDK collection-length getter's own failed-output/error
+handling and array resize-OOM behavior remain outside this bounded fix.
 
 ## CI/CD
 
